@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Crafts & Design Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --accent-color: #d69e2e;
+            --wm-opacity: 0.15;
+        }
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 60px;
+        }
+        .header-card {
+            background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .proprietor-img {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            border: 3px solid #d69e2e;
+            object-fit: cover;
+            background: #fff;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .watermarked-area {
+            position: relative;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        .watermarked-area::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--wm-image, none);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: var(--wm-opacity);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .watermarked-content {
+            position: relative;
+            z-index: 1;
+        }
+        .design-preview {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid #ddd;
+        }
+        .design-preview:hover {
+            transform: scale(1.02);
+        }
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header-card p-3 mb-4">
+        <div class="container d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <img id="headerPropImg" src="https://via.placeholder.com/85?text=Photo" class="proprietor-img" alt="Proprietor">
+                <div>
+                    <h4 class="m-0 fw-bold">Dev Crafts & CNC Design</h4>
+                    <p class="m-0 opacity-75 small"><i class="bi bi-person-fill"></i> प्रोपराइटर: देव कुमार</p>
+                    <p class="m-0 opacity-75 small"><i class="bi bi-telephone-fill"></i> 9279108212</p>
+                </div>
+            </div>
+            <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                <i class="bi bi-gear-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- Search & Filter Bar -->
+        <div class="row g-2 mb-3">
+            <div class="col-8 col-md-10">
+                <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="कस्टमर का नाम, नंबर या ऑर्डर ID खोजें..." onkeyup="renderOrders()">
+            </div>
+            <div class="col-4 col-md-2">
+                <button class="btn btn-primary btn-lg w-100" data-bs-toggle="modal" data-bs-target="#orderModal" onclick="clearForm()">
+                    <i class="bi bi-plus-circle"></i> नया ऑर्डर
+                </button>
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        <div id="ordersList" class="row">
+            <!-- Order cards will be dynamically loaded here -->
+        </div>
+
+    </div>
+
+    <!-- Order Entry/Edit Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">नया ऑर्डर जोड़ें</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="orderForm">
+                        <input type="hidden" id="editIndex">
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">ऑर्डर ID / सीरियल नंबर</label>
+                            <input type="text" id="orderId" class="form-control" readonly>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">कस्टमर का नाम *</label>
+                            <input type="text" id="custName" class="form-control" required placeholder="जैसे: राहुल शर्मा">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">व्हाट्सएप नंबर *</label>
+                            <input type="tel" id="custPhone" class="form-control" required placeholder="9279108212">
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">ऑर्डर की तारीख</label>
+                                <input type="date" id="orderDate" class="form-control">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">डिलीवरी की तारीख</label>
+                                <input type="date" id="deliveryDate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">काम का विवरण (Work Details)</label>
+                            <textarea id="workDetails" class="form-control" rows="2" placeholder="2D Jali Cutting, 3D Bed Design, MDF 18mm..."></textarea>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-4">
+                                <label class="form-label fw-bold">कुल रकम (₹)</label>
+                                <input type="number" id="totalAmt" class="form-control" oninput="calcPending()" value="0">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label fw-bold">एडवांस (₹)</label>
+                                <input type="number" id="advAmt" class="form-control" oninput="calcPending()" value="0">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label fw-bold">बकाया (₹)</label>
+                                <input type="number" id="pendingAmt" class="form-control" readonly value="0">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">ऑर्डर का स्टेटस</label>
+                            <select id="orderStatus" class="form-select">
+                                <option value="Pending">Pending (बाकी है)</option>
+                                <option value="In Progress">In Progress (काम चालू है)</option>
+                                <option value="Completed">Completed (तैयार है)</option>
+                                <option value="Delivered">Delivered (डिलीवर हो गया)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">डिजाइन/मॉडल फोटो अपलोड करें</label>
+                            <input type="file" id="designImageInput" class="form-control" accept="image/*" onchange="previewImage(this, 'modalImgPreview')">
+                            <img id="modalImgPreview" class="design-preview mt-2 d-none">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">रद्द करें</button>
+                    <button type="button" class="btn btn-primary" onclick="saveOrder()">ऑर्डर सेव करें</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Receipt Modal (Customer View) -->
+    <div class="modal fade" id="receiptModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">डिजिटल बिल व रिसिप्ट</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="receiptContent" class="watermarked-area p-4">
+                        <div class="watermarked-content">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                <div>
+                                    <h3 class="fw-bold mb-0 text-primary">Dev Crafts & CNC Design</h3>
+                                    <p class="mb-0 text-muted">प्रो: देव कुमार | मो: 9279108212</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-secondary fs-6" id="rOrderId">DEV-000</span>
+                                    <p class="mb-0 small text-muted mt-1" id="rDate"></p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 fs-6">
+                                <div class="col-6"><strong>कस्टमर नाम:</strong> <span id="rCustName"></span></div>
+                                <div class="col-6 text-end"><strong>मोबाइल:</strong> <span id="rCustPhone"></span></div>
+                            </div>
+
+                            <div class="card bg-light p-3 mb-3">
+                                <h6 class="fw-bold border-bottom pb-1">काम का विवरण:</h6>
+                                <p id="rWorkDetails" class="mb-0"></p>
+                            </div>
+
+                            <div class="row text-center mb-3 g-2">
+                                <div class="col-4">
+                                    <div class="p-2 border rounded bg-white">
+                                        <small class="text-muted d-block">कुल रकम</small>
+                                        <strong id="rTotal" class="fs-5">₹0</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 border rounded bg-white text-success">
+                                        <small class="text-muted d-block">एडवांस</small>
+                                        <strong id="rAdv" class="fs-5">₹0</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 border rounded bg-white text-danger">
+                                        <small class="text-muted d-block">बकाया राशि</small>
+                                        <strong id="rPending" class="fs-5">₹0</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <h6 class="fw-bold mb-2">ऑर्डर किया गया डिजाइन / मॉडल:</h6>
+                                <img id="rImage" src="" class="design-preview" onclick="openZoom(this.src)" alt="Design Photo">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">बंद करें</button>
+                    <button class="btn btn-whatsapp" id="rWhatsappBtn" onclick="sendWhatsApp()"><i class="bi bi-whatsapp"></i> व्हाट्सएप पर भेजें</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Watermark & Profile Setup) -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-sliders"></i> ब्रांडिंग व वॉटरमार्क सेटिंग्स</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">प्रोफाइल फोटो बदलें</label>
+                        <input type="file" id="propImgInput" class="form-control" accept="image/*" onchange="updateProfilePic(this)">
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">बैकग्राउंड वॉटरमार्क फोटो</label>
+                        <input type="file" id="wmImgInput" class="form-control" accept="image/*" onchange="updateWatermark(this)">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">वॉटरमार्क हल्का/गाढ़ापन (Opacity)</label>
+                        <input type="range" class="form-range" id="wmOpacityRange" min="0.05" max="0.5" step="0.05" value="0.15" onchange="changeWmOpacity(this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div class="modal fade" id="zoomModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0 text-center">
+                <img id="zoomedImg" src="" class="img-fluid rounded" style="max-height: 85vh;">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let orders = JSON.parse(localStorage.getItem('dev_crafts_orders')) || [];
+        let settings = JSON.parse(localStorage.getItem('dev_crafts_settings')) || {
+            propImg: '',
+            wmImg: '',
+            wmOpacity: '0.15'
+        };
+        let currentReceiptOrder = null;
+
+        window.onload = function() {
+            applySettings();
+            renderOrders();
+        };
+
+        function applySettings() {
+            if(settings.propImg) {
+                document.getElementById('headerPropImg').src = settings.propImg;
+            }
+            if(settings.wmImg) {
+                document.documentElement.style.setProperty('--wm-image', `url(${settings.wmImg})`);
+            }
+            document.documentElement.style.setProperty('--wm-opacity', settings.wmOpacity || '0.15');
+            document.getElementById('wmOpacityRange').value = settings.wmOpacity || '0.15';
+        }
+
+        function updateProfilePic(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    settings.propImg = e.target.result;
+                    localStorage.setItem('dev_crafts_settings', JSON.stringify(settings));
+                    applySettings();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateWatermark(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    settings.wmImg = e.target.result;
+                    localStorage.setItem('dev_crafts_settings', JSON.stringify(settings));
+                    applySettings();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function changeWmOpacity(val) {
+            settings.wmOpacity = val;
+            localStorage.setItem('dev_crafts_settings', JSON.stringify(settings));
+            applySettings();
+        }
+
+        function getNextOrderId() {
+            let num = orders.length + 1;
+            return 'DEV-' + String(num).padStart(3, '0');
+        }
+
+        function clearForm() {
+            document.getElementById('editIndex').value = '';
+            document.getElementById('modalTitle').innerText = 'नया ऑर्डर जोड़ें';
+            document.getElementById('orderId').value = getNextOrderId();
+            document.getElementById('custName').value = '';
+            document.getElementById('custPhone').value = '';
+            document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('deliveryDate').value = '';
+            document.getElementById('workDetails').value = '';
+            document.getElementById('totalAmt').value = 0;
+            document.getElementById('advAmt').value = 0;
+            document.getElementById('pendingAmt').value = 0;
+            document.getElementById('orderStatus').value = 'Pending';
+            document.getElementById('modalImgPreview').classList.add('d-none');
+            document.getElementById('modalImgPreview').src = '';
+            document.getElementById('designImageInput').value = '';
+        }
+
+        function calcPending() {
+            let total = parseFloat(document.getElementById('totalAmt').value) || 0;
+            let adv = parseFloat(document.getElementById('advAmt').value) || 0;
+            document.getElementById('pendingAmt').value = total - adv;
+        }
+
+        function previewImage(input, targetId) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = document.getElementById(targetId);
+                    img.src = e.target.result;
+                    img.classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveOrder() {
+            let name = document.getElementById('custName').value.trim();
+            let phone = document.getElementById('custPhone').value.trim();
+            if(!name || !phone) {
+                alert('कृपया कस्टमर का नाम और नंबर भरें!');
+                return;
+            }
+
+            let index = document.getElementById('editIndex').value;
+            let imgData = document.getElementById('modalImgPreview').src;
+
+            let orderData = {
+                id: document.getElementById('orderId').value,
+                name: name,
+                phone: phone,
+                orderDate: document.getElementById('orderDate').value,
+                deliveryDate: document.getElementById('deliveryDate').value,
+                work: document.getElementById('workDetails').value,
+                total: parseFloat(document.getElementById('totalAmt').value) || 0,
+                adv: parseFloat(document.getElementById('advAmt').value) || 0,
+                pending: parseFloat(document.getElementById('pendingAmt').value) || 0,
+                status: document.getElementById('orderStatus').value,
+                image: imgData && !imgData.includes('window.location') ? imgData : 'https://via.placeholder.com/300x200?text=No+Design+Photo'
+            };
+
+            if(index === '') {
+                orders.unshift(orderData);
+            } else {
+                orders[index] = orderData;
+            }
+
+            localStorage.setItem('dev_crafts_orders', JSON.stringify(orders));
+            bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+            renderOrders();
+        }
+
+        function renderOrders() {
+            let list = document.getElementById('ordersList');
+            let search = document.getElementById('searchInput').value.toLowerCase();
+            list.innerHTML = '';
+
+            let filtered = orders.filter(o => 
+                o.name.toLowerCase().includes(search) || 
+                o.phone.includes(search) || 
+                o.id.toLowerCase().includes(search)
+            );
+
+            if(filtered.length === 0) {
+                list.innerHTML = '<div class="col-12 text-center text-muted py-5">कोई ऑर्डर नहीं मिला।</div>';
+                return;
+            }
+
+            filtered.forEach((o, i) => {
+                let statusClass = o.status === 'Completed' ? 'bg-success' : o.status === 'In Progress' ? 'bg-primary' : o.status === 'Delivered' ? 'bg-dark' : 'bg-warning text-dark';
+                
+                let card = `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card watermarked-area">
+                        <div class="card-body watermarked-content">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-secondary mb-1">${o.id}</span>
+                                    <h5 class="card-title m-0 fw-bold">${o.name}</h5>
+                                    <small class="text-muted"><i class="bi bi-telephone"></i> ${o.phone}</small>
+                                </div>
+                                <span class="badge ${statusClass} status-badge">${o.status}</span>
+                            </div>
+                            
+                            <p class="card-text small text-truncate mb-2"><strong>काम:</strong> ${o.work || 'N/A'}</p>
+                            
+                            <div class="row text-center mb-3 g-1">
+                                <div class="col-4 border-end"><small>कुल</small><br><strong>₹${o.total}</strong></div>
+                                <div class="col-4 border-end text-success"><small>एडवांस</small><br><strong>₹${o.adv}</strong></div>
+                                <div class="col-4 text-danger"><small>बकाया</small><br><strong>₹${o.pending}</strong></div>
+                            </div>
+
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary flex-fill" onclick="openReceipt(${orders.indexOf(o)})"><i class="bi bi-receipt"></i> बिल देखें</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="editOrder(${orders.indexOf(o)})"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteOrder(${orders.indexOf(o)})"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                list.innerHTML += card;
+            });
+        }
+
+        function editOrder(index) {
+            let o = orders[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').innerText = 'ऑर्डर एडिट करें';
+            document.getElementById('orderId').value = o.id;
+            document.getElementById('custName').value = o.name;
+            document.getElementById('custPhone').value = o.phone;
+            document.getElementById('orderDate').value = o.orderDate;
+            document.getElementById('deliveryDate').value = o.deliveryDate;
+            document.getElementById('workDetails').value = o.work;
+            document.getElementById('totalAmt').value = o.total;
+            document.getElementById('advAmt').value = o.adv;
+            document.getElementById('pendingAmt').value = o.pending;
+            document.getElementById('orderStatus').value = o.status;
+            
+            if(o.image) {
+                let img = document.getElementById('modalImgPreview');
+                img.src = o.image;
+                img.classList.remove('d-none');
+            }
+            new bootstrap.Modal(document.getElementById('orderModal')).show();
+        }
+
+        function deleteOrder(index) {
+            if(confirm('क्या आप सच में इस ऑर्डर को डिलीट करना चाहते हैं?')) {
+                orders.splice(index, 1);
+                localStorage.setItem('dev_crafts_orders', JSON.stringify(orders));
+                renderOrders();
+            }
+        }
+
+        function openReceipt(index) {
+            let o = orders[index];
+            currentReceiptOrder = o;
+            document.getElementById('rOrderId').innerText = o.id;
+            document.getElementById('rDate').innerText = 'तारीख: ' + (o.orderDate || 'N/A');
+            document.getElementById('rCustName').innerText = o.name;
+            document.getElementById('rCustPhone').innerText = o.phone;
+            document.getElementById('rWorkDetails').innerText = o.work || 'कोई विवरण नहीं';
+            document.getElementById('rTotal').innerText = '₹' + o.total;
+            document.getElementById('rAdv').innerText = '₹' + o.adv;
+            document.getElementById('rPending').innerText = '₹' + o.pending;
+            document.getElementById('rImage').src = o.image;
+
+            new bootstrap.Modal(document.getElementById('receiptModal')).show();
+        }
+
+        function sendWhatsApp() {
+            if(!currentReceiptOrder) return;
+            let o = currentReceiptOrder;
+            let msg = `नमस्ते ${o.name} जी,\n\n` +
+                      `आपका *Dev Crafts & CNC Design* में ऑर्डर दर्ज कर लिया गया है।\n\n` +
+                      `*ऑर्डर ID:* ${o.id}\n` +
+                      `*विवरण:* ${o.work}\n` +
+                      `*कुल रकम:* ₹${o.total}\n` +
+                      `*एडवांस:* ₹${o.adv}\n` +
+                      `*बकाया राशि:* ₹${o.pending}\n\n` +
+                      `धन्यवाद!\n` +
+                      `*देव कुमार (Dev Crafts)*\n` +
+                      `संपर्क: 9279108212`;
+            
+            let url = `https://wa.me/91${o.phone}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        function openZoom(src) {
+            document.getElementById('zoomedImg').src = src;
+            new bootstrap.Modal(document.getElementById('zoomModal')).show();
+        }
+    </script>
+</body>
+</html>
